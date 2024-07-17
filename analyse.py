@@ -16,6 +16,8 @@ nltk.download('wordnet')
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
+analyzer = SentimentIntensityAnalyzer()
+
 
 def clean_html(raw_html):
     """
@@ -33,6 +35,15 @@ def preprocess_text(text):
     tokens = [word for word in tokens if word.lower() not in stop_words]
     tokens = [lemmatizer.lemmatize(word) for word in tokens]
     return ' '.join(tokens)
+
+
+def get_score(content):
+    """
+    Get sentiment score for the given content.
+    """
+    cleaned_content = preprocess_text(clean_html(content))
+    score = analyzer.polarity_scores(cleaned_content)['compound']
+    return score
 
 
 def describe_sentiment(term, posts):
@@ -107,7 +118,6 @@ def sentiment_summary(terms, input_dir, output_dir):
 
 def analyse_data(terms, input_dir):
     print("Starting sentiment analysis")
-    analyzer = SentimentIntensityAnalyzer()
     for term in terms:
         print(f"Analysing data for term: {term}")
         posts = pd.read_csv(os.path.join(input_dir, f'{term}_posts.csv'))
@@ -116,8 +126,8 @@ def analyse_data(terms, input_dir):
         posts['cleaned_content'] = posts['content'].apply(clean_html).apply(preprocess_text)
 
         # Sentiment analysis on original and cleaned text
-        posts['precleaned_sentiment'] = posts['content'].apply(lambda x: analyzer.polarity_scores(x)['compound'])
-        posts['sentiment'] = posts['cleaned_content'].apply(lambda x: analyzer.polarity_scores(x)['compound'])
+        posts['precleaned_sentiment'] = posts['content'].apply(lambda x: get_score(x))
+        posts['sentiment'] = posts['cleaned_content'].apply(lambda x: get_score(x))
 
         # Save the results to CSV
         posts.to_csv(os.path.join(input_dir, f'{term}_posts_analysed.csv'), index=False)
@@ -125,3 +135,16 @@ def analyse_data(terms, input_dir):
 
     sentiment_summary(terms, input_dir, input_dir)
     print("Sentiment analysis and summary completed")
+
+
+if __name__ == "__main__":
+    sample = ("It's curious, isn't it, how much Trump grasps at being respected, "
+              "how much he plays up people calling him sir and such, while at the same time "
+              "having absolutely no clue how respect is earned. The man wouldn't know integrity if it bit him on his "
+              "239 pound ass."
+              "Not even MAGA respects him; he's just their favorite bully. Not even my hubby, who voted for Trump "
+              "twice and is probably poised to go again, " "would give a clear answer to the question Do you respect "
+              "Donald Trump? The best Trump can hope to inspire in others is fear, not respect. " "And that's "
+              "pathetic, considering the myriad advantages he's enjoyed in life.")
+    result = get_score(sample)
+    print(f"Sentiment score for the input text: {result}")
