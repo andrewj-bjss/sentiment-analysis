@@ -1,49 +1,25 @@
 import pandas as pd
 import os
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from bs4 import BeautifulSoup
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
 
-# Download necessary NLTK datasets
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
-
-# Initialize NLTK tools
-stop_words = set(stopwords.words('english'))
-lemmatizer = WordNetLemmatizer()
-
-analyzer = SentimentIntensityAnalyzer()
+from analysis.preprocess import clean_html, preprocess_text
+from analysis.vader_analysis import get_vader_score
+from analysis.textblob_analysis import get_textblob_score
+# from analysis.spacy_analysis import get_spacy_score
 
 
-def clean_html(raw_html):
+def get_score(content, method='vader'):
     """
-    Clean and strip HTML tags from the given text.
+    Get sentiment score using the specified method.
     """
-    soup = BeautifulSoup(raw_html, "html.parser")
-    return soup.get_text()
-
-
-def preprocess_text(text):
-    """
-    Preprocess the text by tokenizing, removing stopwords, and lemmatizing.
-    """
-    tokens = word_tokenize(text)
-    tokens = [word for word in tokens if word.lower() not in stop_words]
-    tokens = [lemmatizer.lemmatize(word) for word in tokens]
-    return ' '.join(tokens)
-
-
-def get_score(content):
-    """
-    Get sentiment score for the given content.
-    """
-    cleaned_content = preprocess_text(clean_html(content))
-    score = analyzer.polarity_scores(cleaned_content)['compound']
-    return score
+    if method == 'vader':
+        return get_vader_score(content)
+    elif method == 'textblob':
+        return get_textblob_score(content)
+    elif method == 'spacy':
+        # return get_spacy_score(content)
+        return 0
+    else:
+        raise ValueError("Unsupported method. Choose from 'vader', 'textblob', or 'spacy'.")
 
 
 def describe_sentiment(term, posts):
@@ -54,8 +30,8 @@ def describe_sentiment(term, posts):
     neutral_posts = len(posts[(posts['sentiment'] >= -0.05) & (posts['sentiment'] <= 0.05)])
     negative_posts = len(posts[posts['sentiment'] < -0.05])
 
-    most_positive_post = clean_html(posts.loc[posts['sentiment'].idxmax()]['content'])
-    most_negative_post = clean_html(posts.loc[posts['sentiment'].idxmin()]['content'])
+    most_positive_post = posts.loc[posts['sentiment'].idxmax()]['content']
+    most_negative_post = posts.loc[posts['sentiment'].idxmin()]['content']
 
     summary = f"""
     Sentiment Summary for '{term}':
@@ -116,18 +92,18 @@ def sentiment_summary(terms, input_dir, output_dir):
     print(f"Sentiment summaries saved to {summary_file}")
 
 
-def analyse_data(terms, input_dir):
+def analyse_data(terms, input_dir, method='textblob'):
     print("Starting sentiment analysis")
     for term in terms:
         print(f"Analysing data for term: {term}")
         posts = pd.read_csv(os.path.join(input_dir, f'{term}_posts.csv'))
 
         # Clean and preprocess text
-        posts['cleaned_content'] = posts['content'].apply(clean_html).apply(preprocess_text)
+        posts['cleaned_content'] = posts['content'].apply(lambda x: clean_html(x)).apply(lambda x: preprocess_text(x))
 
         # Sentiment analysis on original and cleaned text
-        posts['precleaned_sentiment'] = posts['content'].apply(lambda x: get_score(x))
-        posts['sentiment'] = posts['cleaned_content'].apply(lambda x: get_score(x))
+        posts['precleaned_sentiment'] = posts['content'].apply(lambda x: get_score(x, method=method))
+        posts['sentiment'] = posts['cleaned_content'].apply(lambda x: get_score(x, method=method))
 
         # Save the results to CSV
         posts.to_csv(os.path.join(input_dir, f'{term}_posts_analysed.csv'), index=False)
@@ -146,5 +122,7 @@ if __name__ == "__main__":
               "twice and is probably poised to go again, " "would give a clear answer to the question Do you respect "
               "Donald Trump? The best Trump can hope to inspire in others is fear, not respect. " "And that's "
               "pathetic, considering the myriad advantages he's enjoyed in life.")
-    result = get_score(sample)
-    print(f"Sentiment score for the input text: {result}")
+
+    use_method = 'vader'
+    result = get_score(sample, method='textblob')
+    print(f"Sentiment score for the input text using {use_method}: {result}")

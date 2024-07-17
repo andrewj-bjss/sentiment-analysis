@@ -3,7 +3,7 @@ import argparse
 from mastodonFetch import check_stream_health
 from retrieve import retrieve_data
 from analyse import analyse_data
-from trend_analysis import generate_trend_analysis
+from analysis.trend_analysis import generate_trend_analysis
 from visualise import plot_sentiment_distribution
 from utils import get_latest_run_dir
 
