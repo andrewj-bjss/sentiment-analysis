@@ -43,7 +43,7 @@ MASTODON_API_BASE_URL=https://mastodon.social
 ## Usage
 
 ### Command Line Interface
-The main.py script is the entry point for the pipeline. It accepts various parameters to control its behavior.
+The main.py script is the entry point for the pipeline. It accepts various parameters to control its behaviour.
 
 ### Parameters
 - --terms: Terms for analysis (space-separated list for multiple terms). Required.
@@ -68,7 +68,7 @@ The main.py script is the entry point for the pipeline. It accepts various param
 Fetch new data, analyze, and generate all visualisations:
 
 ```sh
-python main.py --terms "Biden" "Trump" --fetch-behavior always-fetch --mode full-analysis --resample-period H
+python main.py --terms "Biden" "Trump" --fetch-behaviour always-fetch --mode full-analysis --resample-period H
 ```
 
 Reuse last run's data, analyse, and visualise:
