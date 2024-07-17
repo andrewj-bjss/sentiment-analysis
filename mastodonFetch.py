@@ -41,8 +41,18 @@ def fetch_posts(query, total_limit=100):
     while statuses:
         print(f"Fetching page {page_number}")
 
-        # Collect the posts
-        posts = [{'id': status['id'], 'content': status['content'], 'created_at': status['created_at'], 'source': 'mastodon'} for status in statuses]
+        # Filter posts based on language
+        posts = [
+            {
+                'id': status['id'],
+                'content': status['content'],
+                'created_at': status['created_at'],
+                'language': status.get('language', ''),
+                'source': 'mastodon'
+            }
+            for status in statuses
+            if status.get('language') in ['en', '']
+        ]
         all_posts.extend(posts)
 
         # Check if we've hit the total limit
@@ -65,7 +75,7 @@ def fetch_posts(query, total_limit=100):
 
 # Example usage (if running this script directly)
 if __name__ == "__main__":
-    sample_query = "xbox"
-    posts_df = fetch_posts(sample_query, total_limit=1000)
-    posts_df.to_csv(f"{sample_query}_posts.csv", index=False)
-    print(f"Posts saved to {sample_query}_posts.csv")
+    example_query = "example"
+    posts_df = fetch_posts(example_query, total_limit=1000)
+    posts_df.to_csv(f"{example_query}_posts.csv", index=False)
+    print(f"Posts saved to {example_query}_posts.csv")
