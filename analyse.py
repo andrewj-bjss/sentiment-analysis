@@ -2,6 +2,19 @@ import pandas as pd
 import os
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from bs4 import BeautifulSoup
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+
+# Download necessary NLTK datasets
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+# Initialize NLTK tools
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
 
 
 def clean_html(raw_html):
@@ -10,6 +23,16 @@ def clean_html(raw_html):
     """
     soup = BeautifulSoup(raw_html, "html.parser")
     return soup.get_text()
+
+
+def preprocess_text(text):
+    """
+    Preprocess the text by tokenizing, removing stopwords, and lemmatizing.
+    """
+    tokens = word_tokenize(text)
+    tokens = [word for word in tokens if word.lower() not in stop_words]
+    tokens = [lemmatizer.lemmatize(word) for word in tokens]
+    return ' '.join(tokens)
 
 
 def describe_sentiment(term, posts):
@@ -88,7 +111,15 @@ def analyse_data(terms, input_dir):
     for term in terms:
         print(f"Analysing data for term: {term}")
         posts = pd.read_csv(os.path.join(input_dir, f'{term}_posts.csv'))
-        posts['sentiment'] = posts['content'].apply(lambda x: analyzer.polarity_scores(x)['compound'])
+
+        # Clean and preprocess text
+        posts['cleaned_content'] = posts['content'].apply(clean_html).apply(preprocess_text)
+
+        # Sentiment analysis on original and cleaned text
+        posts['precleaned_sentiment'] = posts['content'].apply(lambda x: analyzer.polarity_scores(x)['compound'])
+        posts['sentiment'] = posts['cleaned_content'].apply(lambda x: analyzer.polarity_scores(x)['compound'])
+
+        # Save the results to CSV
         posts.to_csv(os.path.join(input_dir, f'{term}_posts_analysed.csv'), index=False)
         print(f"Saved analysed data for term: {term} to {input_dir}")
 
