@@ -7,7 +7,7 @@ def retrieve_terms(terms, output_dir, source='mastodon'):
     for term in terms:
         print(f"Retrieving data for term: {term}")
         if source == 'mastodon':
-            posts = fetch_posts(term)
+            posts = fetch_posts(term, 1000)
             posts.to_csv(os.path.join(output_dir, f'{term}_posts.csv'), index=False)
             print(f"Saved posts for term: {term} to {output_dir}")
         # Add elif block for other sources (like BlueSky) here

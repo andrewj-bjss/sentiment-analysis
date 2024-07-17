@@ -1,4 +1,6 @@
 import argparse
+
+from mastodonFetch import check_stream_health
 from retrieve import retrieve_data
 from analyse import analyse_data
 from trend_analysis import generate_trend_analysis
@@ -21,6 +23,8 @@ def main():
                         help='Resampling period for trend analysis (e.g., H for hourly, D for daily)')
 
     args = parser.parse_args()
+
+    check_stream_health()
 
     output_dir = None
     if args.mode in ['fetch', 'fetch-analyse', 'fetch-analyse-visualise', 'full-analysis']:
